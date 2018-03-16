@@ -4,6 +4,7 @@ Created on Fri Mar 16 23:25:43 2018
 
 @author: dell
 """
+#一个语料，做个wordlist，并取出频率最高前10和频率最低的前10个word分别将其与频数打印出来。
 
 import re
 
