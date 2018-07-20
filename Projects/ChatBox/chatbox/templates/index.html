@@ -1,0 +1,222 @@
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset = utf8">
+		<title>多语言文本音频语音翻译盒子</title>
+		<link rel="stylesheet" type="text/css" href="/static/css/style.css">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" type="text/css">
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.js"></script>
+		<script type="text/javascript">
+			var id=0;
+			
+			$(document).ready(function(){
+				$("div#message").hide();
+				$("div#recorder").hide();
+				
+				$('#send').click(function(){
+					//更改聊天窗口
+					var message = $('textarea').val();
+					var old = $('#content').html();
+					$('#content').html(old + '<p class="source">' + message +'</p>');
+					
+					//向后台提交信息
+					posttextinfo();
+				});
+				
+				function posttextinfo(){
+					//获取需要上传的信息
+					var message = $('textarea').val();
+					var r=$('#role option:selected') .val();
+					var s_lang=$('#source_lan option:selected').val();
+					var t_lang=$('#target_lan option:selected').val();
+					var text='str';
+					id++;
+
+					//接收表单的URL地址
+					var url = "/receive_files";
+					
+					//需要POST的值，把每个变量都通过&来联接
+					var postStr   = "data="+ message +"&role="+ r +"&in_lang="+ s_lang +"&out_lang="+ t_lang +"&audio_or_str="+ text +"&session_id="+ id;
+					
+					//实例化Ajax
+					var ajax = false;
+					
+					//开始初始化XMLHttpRequest对象
+					if(window.XMLHttpRequest) { //Mozilla 浏览器
+						ajax = new XMLHttpRequest();
+						if (ajax.overrideMimeType) {//设置MiME类别
+							ajax.overrideMimeType("text/xml");
+						}
+					}
+					else if (window.ActiveXObject) { // IE浏览器
+						try {
+							ajax = new ActiveXObject("Msxml2.XMLHTTP");
+						} catch (e) {
+							try {
+                                 ajax = new ActiveXObject("Microsoft.XMLHTTP");
+							} catch (e) {}
+						}
+					}
+					if (!ajax) { // 异常，创建对象实例失败
+						window.alert("不能创建XMLHttpRequest对象实例.");
+						return false;
+					}
+					
+					//通过Post方式打开连接
+					ajax.open("POST", url, true);
+					
+					//定义传输的文件HTTP头信息
+					ajax.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+
+					//发送POST数据
+					ajax.send(postStr);
+					 
+					//如果执行状态成功，那么就把返回信息写到指定的层里
+					ajax.onreadystatechange = function(){
+						if( ajax.readyState == 4 ){
+							if( ( ajax.status >= 200 && ajax.status < 300  ) || ajax.status == 304 ){
+								var addr = ajax.responseText
+								var old = $('#content').html();
+								$('#content').html(old + '<p class="source"><audio src="' + addr +'" controls autoplay></audio> </p>');
+								//alert( ajax.responseText );
+								
+								/*if(ajax.responseText == '6666'){
+								var status;
+								function getResult(){
+									$.ajax({
+										type: 'GET',
+										url: "/listen",
+										data: "session_id="+ id, 
+										async: false,
+										success: function(response) {
+											console.log('成功啦');
+										},
+										dataType: 'json',
+										timeout: 50*1000,// 超时时间
+										// 超时意味着出错了
+										error: function (error) {
+										  result=error.responseText;
+										  clearInterval(status);
+										}
+
+									});
+								}
+
+							if(!result){
+								status = setInterval(getResult, 1000);
+								var old = $('#content').html();
+								$('#content').html(old + '<p class="source"><audio src="' + result +'" controls autoplay></audio> </p >');}
+								
+						}*/
+						}else{
+							alert( "Request was unsuccessful:" + ajax.status );
+							}
+						}
+					};
+					
+				}
+				
+				$("#text").click(function(){
+					$("div#recorder").hide();
+					$("div#message").show();
+				});
+				
+				$("#audio").click(function(){
+					$("div#message").hide();
+					$("div#recorder").show();
+				});
+				
+				$('#send2').click(function(){
+					var old = $('#content').html();
+					
+					$('#content').html(old + '<p class="source" onclick="play()"><i class="fa d-inline fa-lg fa-volume-up"></i></p>');
+				});
+				
+
+			});
+
+		</script>
+	</head>
+
+	<body>
+			<div id="information">
+				<div>
+				角色：
+				<select id="role">
+					<option value="male">男性/Male</option>
+					<option value="female">女性/Female</option>
+				</select>
+				</div>
+				<div>
+				语言：
+				<select id="source_lan">
+					<option value="zh_CN">中文</option>
+					<option value="en_US">English</option>
+				</select>
+				<i class="fa d-inline fa-lg fa-angle-right"></i>
+				<select id="target_lan">
+					<option value="zh_CN">中文</option>
+					<option value="en_US">English</option>
+				</select>
+				</div>
+			</div>
+			<div id="content">
+			</div>
+			<div id="select">
+			<button id="text">输入文本</button>
+			<button id="audio">发送语音</button>
+			</div>
+			<div id="message">
+				<textarea rows="2" cols = "39">leave a comment</textarea>
+				<button class="send" id="send">发送</button>
+			</div>
+			<div id="recorder">
+				<audio controls autoplay></audio>
+				<button class="record" id="record" onclick="startRecording();">开始</button>
+				<button class="record" id="play" onclick="playRecording();">播放</button>
+				<button class="record" id="stop" onclick="stopRecording();">停止</button>
+				<button class="record" id="upload" onclick="uploadAudio();">上传</button>
+			</div>
+		<script type="text/javascript" src="static/js/HZRecorder.js"></script>
+	<script>
+        var recorder;
+        var audio = document.querySelector('audio');
+        function startRecording() {
+            HZRecorder.get(function (rec) {
+                recorder = rec;
+                recorder.start();
+            });
+        }
+        function stopRecording() {
+            recorder.stop();
+        }
+        function playRecording() {
+            recorder.play(audio);
+        }
+        function uploadAudio() {
+			//获取需要上传的信息
+			var r=$('#role option:selected') .val();
+			var s_lang=$('#source_lan option:selected').val();
+			var t_lang=$('#target_lan option:selected').val();
+			var text='audio';
+			id++;
+			recorder.upload("/receive_files", r, s_lang, t_lang, text, id, function (state, e) {
+                switch (state) {
+                    case 'uploading':
+                        //var percentComplete = Math.round(e.loaded * 100 / e.total) + '%';
+                        break;
+                    case 'ok':
+                        alert(e.target.responseText);
+                        alert("上传成功");
+                        break;
+                    case 'error':
+                        alert("上传失败");
+                        break;
+                    case 'cancel':
+                        alert("上传被取消");
+                        break;
+                }
+            });
+        }
+    </script>
+	</body>
+</html>
